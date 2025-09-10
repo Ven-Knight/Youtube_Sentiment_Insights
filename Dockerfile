@@ -1,9 +1,14 @@
-FROM python:3.10-slim-buster           # Use a lightweight Python 3.10 base image for faster builds
+# Use a lightweight Python 3.10 base image for faster builds
+FROM python:3.10-slim-buster           
 
-WORKDIR /app                           # Set working directory inside the container to /app
+# Set working directory inside the container to /app
+WORKDIR /app                           
 
-COPY . /app                            # Copy all files from your repo into the container /app directory
+# Copy all files from your repo into the container /app directory
+COPY . /app                            
 
-RUN pip install -r requirements.txt    # Install Python dependencies listed in requirements.txt
+# Install Python dependencies listed in requirements.txt
+RUN pip install -r requirements.txt    
 
-CMD ["python3", "flask_api/app.py"]    # Start the Flask API by running app.py inside flask_api folder
+# Start the Flask API by running app.py inside flask_api folder
+CMD ["python3", "flask_api/app.py"]    
