@@ -1,25 +1,26 @@
-import numpy as np
-import pandas as pd
+import numpy    as np
+import pandas   as pd
+import lightgbm as lgb
 import os
 import pickle
 import yaml
 import logging
-import lightgbm as lgb
+from imblearn.over_sampling          import SMOTE
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 # logging configuration
-logger = logging.getLogger('model_building')
-logger.setLevel('DEBUG')
+logger          = logging.getLogger('model_building')
+logger            .setLevel('DEBUG')
 
 console_handler = logging.StreamHandler()
-console_handler.setLevel('DEBUG')
+console_handler   .setLevel('DEBUG')
 
-file_handler = logging.FileHandler('model_building_errors.log')
-file_handler.setLevel('ERROR')
+file_handler    = logging.FileHandler('model_building_errors.log')
+file_handler      .setLevel('ERROR')
 
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-console_handler.setFormatter(formatter)
-file_handler.setFormatter(formatter)
+formatter       = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console_handler   .setFormatter(formatter)
+file_handler      .setFormatter(formatter)
 
 logger.addHandler(console_handler)
 logger.addHandler(file_handler)
@@ -47,8 +48,7 @@ def load_data(file_path: str) -> pd.DataFrame:
     """Load data from a CSV file."""
     try:
         df = pd.read_csv(file_path)
-        df.fillna('', inplace=True)  # Fill any NaN values
-        logger.debug('Data loaded and NaNs filled from %s', file_path)
+        logger.debug('Data loaded from %s', file_path)
         return df
     except pd.errors.ParserError as e:
         logger.error('Failed to parse the CSV file: %s', e)
@@ -61,10 +61,10 @@ def load_data(file_path: str) -> pd.DataFrame:
 def apply_tfidf(train_data: pd.DataFrame, max_features: int, ngram_range: tuple) -> tuple:
     """Apply TF-IDF with ngrams to the data."""
     try:
-        vectorizer = TfidfVectorizer(max_features=max_features, ngram_range=ngram_range)
+        vectorizer    = TfidfVectorizer(max_features=max_features, ngram_range=ngram_range)
 
-        X_train = train_data['clean_comment'].values
-        y_train = train_data['category'].values
+        X_train       = train_data['processed_comment'].values
+        y_train       = train_data['category']         .values
 
         # Perform TF-IDF transformation
         X_train_tfidf = vectorizer.fit_transform(X_train)
@@ -81,22 +81,43 @@ def apply_tfidf(train_data: pd.DataFrame, max_features: int, ngram_range: tuple)
         logger.error('Error during TF-IDF transformation: %s', e)
         raise
 
+def apply_smote(x_train_tfidf : pd.DataFrame, y_train : pd.DataFrame) -> tuple:
+    try:
+        smote                = SMOTE(random_state=42)
+        x_train_tfidf_smote, y_train = smote.fit_resample(x_train_tfidf, y_train)
 
-def train_lgbm(X_train: np.ndarray, y_train: np.ndarray, learning_rate: float, max_depth: int, n_estimators: int) -> lgb.LGBMClassifier:
+        logger.debug("SMOTE applied on training set")
+        return x_train_tfidf_smote, y_train
+    
+    except Exception as e:
+        logger.error('Error during SMOTE transformation: %s', e)
+        raise 
+    
+
+def train_lgbm(X_train: np.ndarray, y_train: np.ndarray, params : dict) -> lgb.LGBMClassifier:
     """Train a LightGBM model."""
     try:
         best_model = lgb.LGBMClassifier(
-            objective='multiclass',
-            num_class=3,
-            metric="multi_logloss",
-            is_unbalance=True,
-            class_weight="balanced",
-            reg_alpha=0.1,  # L1 regularization
-            reg_lambda=0.1,  # L2 regularization
-            learning_rate=learning_rate,
-            max_depth=max_depth,
-            n_estimators=n_estimators
-        )
+                                            # objective     = 'multiclass',
+                                            # num_class     = 3,
+                                            # metric        = "multi_logloss",
+                                            # is_unbalance  = True,
+                                            # class_weight  = "balanced",
+                                            # reg_alpha     = 0.1,  # L1 regularization
+                                            # reg_lambda    = 0.1,  # L2 regularization
+                                            # learning_rate = learning_rate,
+                                            # max_depth     = max_depth,
+                                            # n_estimators  = n_estimators
+                                            n_estimators      = params['model_building']['n_estimators'],
+                                            learning_rate     = params['model_building']['learning_rate'],
+                                            max_depth         = params['model_building']['max_depth'],
+                                            num_leaves        = params['model_building']['num_leaves'],
+                                            min_child_samples = params['model_building']['min_child_samples'],
+                                            colsample_bytree  = params['model_building']['colsample_bytree'],
+                                            subsample         = params['model_building']['subsample'],
+                                            reg_alpha         = params['model_building']['reg_alpha'],
+                                            reg_lambda        = params['model_building']['reg_lambda']
+                                        )
         best_model.fit(X_train, y_train)
         logger.debug('LightGBM model training completed')
         return best_model
@@ -118,32 +139,31 @@ def save_model(model, file_path: str) -> None:
 
 def get_root_directory() -> str:
     """Get the root directory (two levels up from this script's location)."""
-    current_dir = os.path.dirname(os.path.abspath(__file__))
+    current_dir       = os.path.dirname(os.path.abspath(__file__))
     return os.path.abspath(os.path.join(current_dir, '../../'))
 
 
 def main():
     try:
         # Get root directory and resolve the path for params.yaml
-        root_dir = get_root_directory()
+        root_dir      = get_root_directory()
 
         # Load parameters from the root directory
-        params = load_params(os.path.join(root_dir, 'params.yaml'))
-        max_features = params['model_building']['max_features']
-        ngram_range = tuple(params['model_building']['ngram_range'])
-
-        learning_rate = params['model_building']['learning_rate']
-        max_depth = params['model_building']['max_depth']
-        n_estimators = params['model_building']['n_estimators']
+        params        = load_params(os.path.join(root_dir, 'params.yaml'))
+        max_features  =       params['model_building']['max_features']
+        ngram_range   = tuple(params['model_building']['ngram_range'])
 
         # Load the preprocessed training data from the interim directory
-        train_data = load_data(os.path.join(root_dir, 'data/interim/train_processed.csv'))
+        train_data    = load_data(os.path.join(root_dir, 'data/interim/train_processed.csv'))
 
         # Apply TF-IDF feature engineering on training data
         X_train_tfidf, y_train = apply_tfidf(train_data, max_features, ngram_range)
 
+        # Apply SMOTE on train data
+        X_train_tfidf_smote, y_train_smote = apply_smote(X_train_tfidf, y_train)
+
         # Train the LightGBM model using hyperparameters from params.yaml
-        best_model = train_lgbm(X_train_tfidf, y_train, learning_rate, max_depth, n_estimators)
+        best_model    = train_lgbm(X_train_tfidf_smote, y_train_smote, params)
 
         # Save the trained model in the root directory
         save_model(best_model, os.path.join(root_dir, 'lgbm_model.pkl'))
