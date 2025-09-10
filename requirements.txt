@@ -9,4 +9,9 @@ psutil==7.0.0
 pyarrow==17.0.0
 scikit-learn==1.7.1
 scipy==1.15.3
+contractions
+emoji
+unidecode
+beautifulsoup4
+symspellpy
 -e .
