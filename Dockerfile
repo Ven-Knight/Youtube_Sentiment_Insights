@@ -7,6 +7,9 @@ WORKDIR /app
 # Copy all files from your repo into the container /app directory
 COPY . /app                            
 
+# Install system-level dependencies required by LightGBM
+RUN apt-get update && apt-get install -y libgomp1
+
 # Install Python dependencies listed in requirements.txt
 RUN pip install -r requirements.txt    
 
