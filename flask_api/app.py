@@ -148,7 +148,7 @@ def load_model_and_vectorizer(model_name, model_version, vectorizer_path):
 
 
 # Initialize the model and vectorizer
-model, vectorizer = load_model_and_vectorizer("yt_chrome_plugin_model", "2", "./tfidf_vectorizer.pkl")  # Update paths and versions as needed
+# model, vectorizer = load_model_and_vectorizer("yt_chrome_plugin_model", "2", "./tfidf_vectorizer.pkl")  # Update paths and versions as needed
 
 @app.route('/')
 def home():
@@ -398,4 +398,10 @@ def health():
 
 
 if __name__ == '__main__':
+    try:
+        model, vectorizer = load_model_and_vectorizer("yt_chrome_plugin_model", "2", "./tfidf_vectorizer.pkl")
+        print("✅ Model and vectorizer loaded successfully")
+    except Exception as e:
+        print(f"❌ Model loading failed: {e}")
+
     app.run(host='0.0.0.0', port=8080, debug=True)
