@@ -44,7 +44,7 @@ sym_spell.load_dictionary(dict_path, term_index=0, count_index=1)
 # Initialize NLP tools
 lemmatizer = WordNetLemmatizer()
 stemmer    = PorterStemmer()
-stop_words = set(stopwords.words('english')) - {'not', 'but', 'however', 'no', 'yet'} # retaining important ones for sentiment analysis
+# stop_words = set(stopwords.words('english')) - {'not', 'but', 'however', 'no', 'yet'} # retaining important ones for sentiment analysis
 
 
 
@@ -398,20 +398,26 @@ def health():
 
 
 if __name__ == '__main__':
-    nltk.download("punkt")
-    nltk.download("stopwords")
-    nltk.download("wordnet")    
-    
     try:
-        print("🚀 Starting model and vectorizer loading...")
+        import nltk
+        nltk.download("punkt")
+        nltk.download("stopwords")
+        nltk.download("wordnet")
+
+        from nltk.corpus import stopwords
+        stop_words = set(stopwords.words('english')) - {'not', 'but', 'however', 'no', 'yet'}
+        print("✅ NLTK data loaded and stopwords initialized")
+    except Exception as e:
+        print(f"❌ NLTK setup failed: {e}")
+        stop_words = set()
+
+    try:
         model, vectorizer = load_model_and_vectorizer("yt_chrome_plugin_model", "2", "./tfidf_vectorizer.pkl")
         print("✅ Model and vectorizer loaded successfully")
     except Exception as e:
         print(f"❌ Model loading failed: {e}")
         model, vectorizer = None, None
 
-    try:
-        print("🚀 Starting Flask app on port 8080...")
-        app.run(host='0.0.0.0', port=8080, debug=True)
-    except Exception as e:
-        print(f"❌ Flask app failed to start: {e}")
+    print("🚀 Starting Flask app on port 8080...")
+    app.run(host='0.0.0.0', port=8080, debug=True)
+
