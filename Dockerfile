@@ -1,5 +1,5 @@
 # Use a lightweight Python 3.10 base image for faster builds
-FROM python:3.10-slim-buster           
+FROM python:3.10-slim-bookworm          
 
 # Set working directory inside the container to /app
 WORKDIR /app                           
