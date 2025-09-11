@@ -401,6 +401,23 @@ def generate_trend_graph():
 def health():
     return jsonify({"status": "ok"})
 
+@app.route('/debug', methods=['POST'])
+def debug():
+    data         = request.json
+    text         = data.get('text', '')
+    cleaned      = clean_comment(text)
+    preprocessed = preprocess_comment(cleaned)
+    vec          = vectorizer.transform([preprocessed])
+    df           = pd.DataFrame(vec.toarray(), columns=vectorizer.get_feature_names_out())
+    pred         = model.predict(df).tolist()
+    return jsonify({
+                      "comment"          : text,
+                      "cleaned"          : cleaned,
+                      "preprocessed"     : preprocessed,
+                      "vectorized_shape" : vec.shape,
+                      "nonzero_features" : int((vec != 0).sum()),   # tells how many features are actually active
+                      "prediction"       : pred
+                   })
 
 if __name__ == '__main__':
     try:
