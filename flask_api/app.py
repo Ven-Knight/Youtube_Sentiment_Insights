@@ -406,18 +406,18 @@ if __name__ == '__main__':
 
         from nltk.corpus import stopwords
         stop_words = set(stopwords.words('english')) - {'not', 'but', 'however', 'no', 'yet'}
-        print("✅ NLTK data loaded and stopwords initialized")
+        print("NLTK data loaded and stopwords initialized")
     except Exception as e:
-        print(f"❌ NLTK setup failed: {e}")
+        print(f"NLTK setup failed: {e}")
         stop_words = set()
 
     try:
-        model, vectorizer = load_model_and_vectorizer("yt_chrome_plugin_model", "2", "./tfidf_vectorizer.pkl")
-        print("✅ Model and vectorizer loaded successfully")
+        model, vectorizer = load_model_and_vectorizer("yt_chrome_plugin_model", "2", "/app/tfidf_vectorizer.pkl")
+        print("Model and vectorizer loaded successfully")
     except Exception as e:
-        print(f"❌ Model loading failed: {e}")
+        print(f"Model loading failed: {e}")
         model, vectorizer = None, None
 
-    print("🚀 Starting Flask app on port 8080...")
+    print("Starting Flask app on port 8080...")
     app.run(host='0.0.0.0', port=8080, debug=True)
 
