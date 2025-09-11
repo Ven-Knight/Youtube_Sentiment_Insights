@@ -29,6 +29,16 @@ from flask_cors            import CORS
 from flask                 import Flask, request, jsonify, send_file
 
 
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
+
+
+
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
@@ -51,61 +61,95 @@ print("NLTK resources downloaded and NLP tools initialized")
 
 
 # Define clean_comment function
-def clean_comment(text):
-    """Apply cleaning transformations to a comment."""
-    corrected_text = ""                    # Initialize to avoid reference error
+# def clean_comment(text):
+#     """Apply cleaning transformations to a comment."""
+#     corrected_text = ""                    # Initialize to avoid reference error
 
-    try:
-        """Step-by-step text cleaning for NLP tasks."""
+#     try:
+#         """Step-by-step text cleaning for NLP tasks."""
 
-        # Step 1️⃣: Convert Tensor to string if needed
-        # if isinstance(text, tf.Tensor):
-        #     text = text.numpy().decode("utf-8")
+#         # Step 1️⃣: Convert Tensor to string if needed
+#         # if isinstance(text, tf.Tensor):
+#         #     text = text.numpy().decode("utf-8")
 
-        # Step 2️⃣: Remove HTML tags
-        text = BeautifulSoup(text, "html.parser").get_text()
+#         # Step 2️⃣: Remove HTML tags
+#         text = BeautifulSoup(text, "html.parser").get_text()
 
-        # Step 3️⃣: Expand contractions (e.g., "don't" → "do not")
-        text = contractions.fix(text)
+#         # Step 3️⃣: Expand contractions (e.g., "don't" → "do not")
+#         text = contractions.fix(text)
     
-        # Step 4️⃣: Replace hyphens with spaces
+#         # Step 4️⃣: Replace hyphens with spaces
+#         text = re.sub(r"-", " ", text)
+
+#         # Step 5️⃣: Remove special characters (except basic punctuation)
+#         text = re.sub(r"[^a-zA-Z0-9\s.,!?]", "", text)
+
+#         # Step 6️⃣: Remove newline characters
+#         text = text.replace('\n', ' ')
+
+#         # Step 7️⃣: Remove URLs
+#         url_pattern = r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"
+#         text = re.sub(url_pattern, '', text)
+
+#         # Step 8️⃣: Convert to lowercase
+#         text = text.lower()
+
+#         # Step 9️⃣: Correct misspellings using SymSpell
+#         words          = text.split()
+#         corrected_text = " ".join([
+#                                     sym_spell.lookup(word, Verbosity.CLOSEST, max_edit_distance=2)[0].term
+#                                     if   sym_spell.lookup(word, Verbosity.CLOSEST, max_edit_distance=2)
+#                                     else word for word in words
+#                                 ])
+
+#         # Step 🔟: Remove extra whitespaces
+#         corrected_text = re.sub(r"\s+", " ", corrected_text).strip()
+
+#         # Step 1️⃣1️⃣: Normalize Unicode characters (e.g., accented letters → plain text)
+#         corrected_text = unidecode.unidecode(corrected_text)
+
+#         # Step 1️⃣2️⃣: Remove emojis and non-ASCII characters
+#         corrected_text = emoji.replace_emoji(corrected_text, replace="")
+
+#         return corrected_text
+
+#     except Exception as e:
+#         print(f"Error in cleaning comment: {e}")
+#         return corrected_text
+
+def clean_comment(text):
+    corrected_text = ""
+    try:
+        logger.info(f"🔹 Raw input: {text}")
+
+        text = BeautifulSoup(text, "html.parser").get_text()
+        text = contractions.fix(text)
+        text = re.sub(r"[–—]", " ", text)  # handle em-dash
         text = re.sub(r"-", " ", text)
-
-        # Step 5️⃣: Remove special characters (except basic punctuation)
         text = re.sub(r"[^a-zA-Z0-9\s.,!?]", "", text)
-
-        # Step 6️⃣: Remove newline characters
         text = text.replace('\n', ' ')
-
-        # Step 7️⃣: Remove URLs
-        url_pattern = r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"
-        text = re.sub(url_pattern, '', text)
-
-        # Step 8️⃣: Convert to lowercase
+        text = re.sub(r"http[s]?://\S+", '', text)
         text = text.lower()
 
-        # Step 9️⃣: Correct misspellings using SymSpell
-        words          = text.split()
+        words = text.split()
         corrected_text = " ".join([
-                                    sym_spell.lookup(word, Verbosity.CLOSEST, max_edit_distance=2)[0].term
-                                    if   sym_spell.lookup(word, Verbosity.CLOSEST, max_edit_distance=2)
-                                    else word for word in words
-                                ])
+            sym_spell.lookup(word, Verbosity.CLOSEST, max_edit_distance=2)[0].term
+            if sym_spell.lookup(word, Verbosity.CLOSEST, max_edit_distance=2)
+            else word for word in words
+        ])
 
-        # Step 🔟: Remove extra whitespaces
         corrected_text = re.sub(r"\s+", " ", corrected_text).strip()
-
-        # Step 1️⃣1️⃣: Normalize Unicode characters (e.g., accented letters → plain text)
         corrected_text = unidecode.unidecode(corrected_text)
-
-        # Step 1️⃣2️⃣: Remove emojis and non-ASCII characters
         corrected_text = emoji.replace_emoji(corrected_text, replace="")
 
+        logger.info(f"✅ Cleaned text: {corrected_text}")
         return corrected_text
 
     except Exception as e:
-        print(f"Error in cleaning comment: {e}")
+        logger.error(f"❌ Error in clean_comment: {e}")
+        logging.exception(e)
         return corrected_text
+    
 
 # Define the pre_processing function
 # def preprocess_comment(cleaned_text):
@@ -137,35 +181,32 @@ def clean_comment(text):
 #         return processed_text
 
 def preprocess_comment(cleaned_text):
-    """Apply NLP preprocessing: tokenization, stopword removal, lemmatization."""
     processed_text = ""
-
     try:
-        # Step 1️⃣: Tokenize
+        logger.info(f"🔹 Preprocessing input: {cleaned_text}")
+
         tokens = word_tokenize(cleaned_text)
-        print(f"🔹 Tokens: {tokens}", flush=True)
+        logger.info(f"🔹 Tokens: {tokens}")
 
-        # Step 2️⃣: Lowercase + Stopword removal
-        tokens = [word.lower() for word in tokens if word.lower() not in stop_words]
-        print(f"🔹 After stopword removal: {tokens}", flush=True)
+        tokens = [word for word in tokens if word not in stop_words]
+        logger.info(f"🔹 After stopword removal: {tokens}")
 
-        # Step 3️⃣: Lemmatize
         lemmatized_tokens = [lemmatizer.lemmatize(word) for word in tokens]
-        print(f"🔹 Lemmatized tokens: {lemmatized_tokens}", flush=True)
+        logger.info(f"🔹 Lemmatized tokens: {lemmatized_tokens}")
 
-        # Step 4️⃣: Reconstruct
         processed_text = " ".join(lemmatized_tokens)
 
-        # Step 5️⃣: Fallback if empty
         if not processed_text.strip():
-            processed_text = cleaned_text  # fallback to cleaned version
+            logger.warning("⚠️ Preprocessed text is empty, falling back to cleaned text")
+            processed_text = cleaned_text
 
+        logger.info(f"✅ Final preprocessed text: {processed_text}")
         return processed_text
 
     except Exception as e:
-        print(f"Error in preprocessing comment: {e}")
-        return cleaned_text  # fallback to cleaned version
-
+        logger.error(f"❌ Error in preprocess_comment: {e}")
+        logging.exception(e)
+        return cleaned_text
 
 
 # Load the model and vectorizer from the model registry and local storage
