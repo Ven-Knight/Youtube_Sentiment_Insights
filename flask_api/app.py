@@ -108,34 +108,63 @@ def clean_comment(text):
         return corrected_text
 
 # Define the pre_processing function
+# def preprocess_comment(cleaned_text):
+#     """Apply pre_processing transformations to a comment."""
+#     processed_text = ""                       # Initialize to avoid reference error
+
+#     try:
+#         """Step-by-step NLP preprocessing: tokenization, stopword removal, lemmatization."""
+
+#         # Step 1️⃣: Tokenize the cleaned text
+#         tokens = word_tokenize(cleaned_text)
+
+#         # Step 2️⃣: Remove stopwords
+#         tokens = [word for word in tokens if word not in stop_words]
+
+#         # Step 3️⃣: Lemmatize tokens
+#         lemmatized_tokens = [lemmatizer.lemmatize(word) for word in tokens]
+
+#         # Step 4️⃣: (Optional) Stemming — currently commented out
+#         # stemmed_tokens = [stemmer.stem(word) for word in lemmatized_tokens]
+
+#         # Step 5️⃣: Reconstruct the processed sentence
+#         processed_text = " ".join(lemmatized_tokens)
+
+#         return processed_text
+
+#     except Exception as e:
+#         print(f"Error in preprocessing comment: {e}")
+#         return processed_text
+
 def preprocess_comment(cleaned_text):
-    """Apply pre_processing transformations to a comment."""
-    processed_text = ""                       # Initialize to avoid reference error
+    """Apply NLP preprocessing: tokenization, stopword removal, lemmatization."""
+    processed_text = ""
 
     try:
-        """Step-by-step NLP preprocessing: tokenization, stopword removal, lemmatization."""
-
-        # Step 1️⃣: Tokenize the cleaned text
+        # Step 1️⃣: Tokenize
         tokens = word_tokenize(cleaned_text)
+        print(f"🔹 Tokens: {tokens}")
 
-        # Step 2️⃣: Remove stopwords
-        tokens = [word for word in tokens if word not in stop_words]
+        # Step 2️⃣: Lowercase + Stopword removal
+        tokens = [word.lower() for word in tokens if word.lower() not in stop_words]
+        print(f"🔹 After stopword removal: {tokens}")
 
-        # Step 3️⃣: Lemmatize tokens
+        # Step 3️⃣: Lemmatize
         lemmatized_tokens = [lemmatizer.lemmatize(word) for word in tokens]
+        print(f"🔹 Lemmatized tokens: {lemmatized_tokens}")
 
-        # Step 4️⃣: (Optional) Stemming — currently commented out
-        # stemmed_tokens = [stemmer.stem(word) for word in lemmatized_tokens]
-
-        # Step 5️⃣: Reconstruct the processed sentence
+        # Step 4️⃣: Reconstruct
         processed_text = " ".join(lemmatized_tokens)
+
+        # Step 5️⃣: Fallback if empty
+        if not processed_text.strip():
+            processed_text = cleaned_text  # fallback to cleaned version
 
         return processed_text
 
     except Exception as e:
         print(f"Error in preprocessing comment: {e}")
-        return processed_text
-
+        return cleaned_text  # fallback to cleaned version
 
 
 
