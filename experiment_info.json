@@ -1,0 +1,5 @@
+{
+    "run_id": "851180dace97494f85f67c83a98343fa",
+    "artifact_uri": "s3://mlflow-s3-25/121954430585095473/851180dace97494f85f67c83a98343fa/artifacts",
+    "model_path": "lgbm_model"
+}

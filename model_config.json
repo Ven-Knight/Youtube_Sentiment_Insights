@@ -1,0 +1,5 @@
+{
+    "model_name": "yt_chrome_plugin_model",
+    "model_version": "3",
+    "vectorizer_path": "/app/tfidf_vectorizer.pkl"
+}
