@@ -141,20 +141,32 @@ def preprocess_comment(cleaned_text):
 
 # Load the model and vectorizer from the model registry and local storage
 def load_model_and_vectorizer(model_name, model_version, vectorizer_path):
-    # Set MLflow tracking URI to the server
-    mlflow.set_tracking_uri("http://ec2-13-233-244-190.ap-south-1.compute.amazonaws.com:5000/")  # MLflow tracking URI
-    client         = MlflowClient()
-    model_uri      = f"models:/{model_name}/{model_version}"
-    model          = mlflow.pyfunc.load_model(model_uri)
-    
-    with open(vectorizer_path, 'rb') as file:
-        vectorizer = pickle.load(file)
-   
-    return model, vectorizer
+    try:
+        print(f"Loading model: {model_name} version: {model_version}")
+        mlflow.set_tracking_uri("http://ec2-13-233-244-190.ap-south-1.compute.amazonaws.com:5000/")   # MLflow tracking URI
+        client = MlflowClient()
+
+        model = mlflow.pyfunc.load_model(f"models:/{model_name}/{model_version}")
+        print("Model loaded successfully")
+        print(f"Model type: {type(model)}")
+
+        # Validate vectorizer file path
+        if not os.path.exists(vectorizer_path):
+            raise FileNotFoundError(f"Vectorizer file not found at: {vectorizer_path}")
+
+        print(f"Loading vectorizer from: {vectorizer_path}")
+        with open(vectorizer_path, "rb") as f:
+            vectorizer = pickle.load(f)
+        print("Vectorizer loaded successfully")
+
+        return model, vectorizer
+
+    except Exception as e:
+        print(f"Error loading model or vectorizer: {e}")
+        return None, None
 
 
-# Initialize the model and vectorizer
-# model, vectorizer = load_model_and_vectorizer("yt_chrome_plugin_model", "2", "./tfidf_vectorizer.pkl")  # Update paths and versions as needed
+
 
 @app.route('/')
 def home():
