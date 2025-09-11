@@ -32,9 +32,9 @@ app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
 # Download required NLTK data for NLP
-# nltk.download("punkt")
-# nltk.download("stopwords")
-# nltk.download("wordnet")
+nltk.download("punkt")
+nltk.download("stopwords")
+nltk.download("wordnet")
 
 # Initialize SymSpell for spelling correction
 sym_spell  = SymSpell(max_dictionary_edit_distance=2)
@@ -44,8 +44,9 @@ sym_spell.load_dictionary(dict_path, term_index=0, count_index=1)
 # Initialize NLP tools
 lemmatizer = WordNetLemmatizer()
 stemmer    = PorterStemmer()
-# stop_words = set(stopwords.words('english')) - {'not', 'but', 'however', 'no', 'yet'} # retaining important ones for sentiment analysis
+stop_words = set(stopwords.words('english')) - {'not', 'but', 'however', 'no', 'yet'} # retaining important ones for sentiment analysis
 
+print("NLTK resources downloaded and NLP tools initialized")
 
 
 # Define clean_comment function
@@ -399,19 +400,6 @@ def health():
 
 if __name__ == '__main__':
     try:
-        import nltk
-        nltk.download("punkt")
-        nltk.download("stopwords")
-        nltk.download("wordnet")
-
-        from nltk.corpus import stopwords
-        stop_words = set(stopwords.words('english')) - {'not', 'but', 'however', 'no', 'yet'}
-        print("NLTK data loaded and stopwords initialized")
-    except Exception as e:
-        print(f"NLTK setup failed: {e}")
-        stop_words = set()
-
-    try:
         model, vectorizer = load_model_and_vectorizer("yt_chrome_plugin_model", "2", "/app/tfidf_vectorizer.pkl")
         print("Model and vectorizer loaded successfully")
     except Exception as e:
@@ -419,5 +407,5 @@ if __name__ == '__main__':
         model, vectorizer = None, None
 
     print("Starting Flask app on port 8080...")
-    app.run(host='0.0.0.0', port=8080, debug=True)
+    app.run(host='0.0.0.0', port=8080)
 
