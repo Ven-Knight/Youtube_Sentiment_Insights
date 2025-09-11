@@ -143,15 +143,15 @@ def preprocess_comment(cleaned_text):
     try:
         # Step 1️⃣: Tokenize
         tokens = word_tokenize(cleaned_text)
-        print(f"🔹 Tokens: {tokens}")
+        print(f"🔹 Tokens: {tokens}", flush=True)
 
         # Step 2️⃣: Lowercase + Stopword removal
         tokens = [word.lower() for word in tokens if word.lower() not in stop_words]
-        print(f"🔹 After stopword removal: {tokens}")
+        print(f"🔹 After stopword removal: {tokens}", flush=True)
 
         # Step 3️⃣: Lemmatize
         lemmatized_tokens = [lemmatizer.lemmatize(word) for word in tokens]
-        print(f"🔹 Lemmatized tokens: {lemmatized_tokens}")
+        print(f"🔹 Lemmatized tokens: {lemmatized_tokens}", flush=True)
 
         # Step 4️⃣: Reconstruct
         processed_text = " ".join(lemmatized_tokens)
