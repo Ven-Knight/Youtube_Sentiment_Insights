@@ -52,6 +52,8 @@ print("NLTK resources downloaded and NLP tools initialized")
 # Define clean_comment function
 def clean_comment(text):
     """Apply cleaning transformations to a comment."""
+    corrected_text = ""                    # Initialize to avoid reference error
+
     try:
         """Step-by-step text cleaning for NLP tasks."""
 
@@ -107,6 +109,8 @@ def clean_comment(text):
 # Define the pre_processing function
 def preprocess_comment(cleaned_text):
     """Apply pre_processing transformations to a comment."""
+    processed_text = ""                       # Initialize to avoid reference error
+
     try:
         """Step-by-step NLP preprocessing: tokenization, stopword removal, lemmatization."""
 
