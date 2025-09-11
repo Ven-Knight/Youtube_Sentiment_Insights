@@ -45,7 +45,7 @@ def load_params(params_path: str) -> dict:
 
 
 def load_data(file_path: str) -> pd.DataFrame:
-    """Load data from a CSV file."""
+    """Load train data from a CSV file."""
     try:
         df = pd.read_csv(file_path)
         logger.debug('Data loaded from %s', file_path)
@@ -75,7 +75,7 @@ def apply_tfidf(train_data: pd.DataFrame, max_features: int, ngram_range: tuple)
         with open(os.path.join(get_root_directory(), 'tfidf_vectorizer.pkl'), 'wb') as f:
             pickle.dump(vectorizer, f)
 
-        logger.debug('TF-IDF applied with trigrams and data transformed')
+        logger.debug('TF-IDF applied with trigrams --> train data transformed --> vectorizer saved at root')
         return X_train_tfidf, y_train
     except Exception as e:
         logger.error('Error during TF-IDF transformation: %s', e)
@@ -83,7 +83,7 @@ def apply_tfidf(train_data: pd.DataFrame, max_features: int, ngram_range: tuple)
 
 def apply_smote(x_train_tfidf : pd.DataFrame, y_train : pd.DataFrame) -> tuple:
     try:
-        smote                = SMOTE(random_state=42)
+        smote                        = SMOTE(random_state=42)
         x_train_tfidf_smote, y_train = smote.fit_resample(x_train_tfidf, y_train)
 
         logger.debug("SMOTE applied on training set")
@@ -98,16 +98,6 @@ def train_lgbm(X_train: np.ndarray, y_train: np.ndarray, params : dict) -> lgb.L
     """Train a LightGBM model."""
     try:
         best_model = lgb.LGBMClassifier(
-                                            # objective     = 'multiclass',
-                                            # num_class     = 3,
-                                            # metric        = "multi_logloss",
-                                            # is_unbalance  = True,
-                                            # class_weight  = "balanced",
-                                            # reg_alpha     = 0.1,  # L1 regularization
-                                            # reg_lambda    = 0.1,  # L2 regularization
-                                            # learning_rate = learning_rate,
-                                            # max_depth     = max_depth,
-                                            # n_estimators  = n_estimators
                                             n_estimators      = params['model_building']['n_estimators'],
                                             learning_rate     = params['model_building']['learning_rate'],
                                             max_depth         = params['model_building']['max_depth'],
@@ -118,9 +108,11 @@ def train_lgbm(X_train: np.ndarray, y_train: np.ndarray, params : dict) -> lgb.L
                                             reg_alpha         = params['model_building']['reg_alpha'],
                                             reg_lambda        = params['model_building']['reg_lambda']
                                         )
+        
         best_model.fit(X_train, y_train)
         logger.debug('LightGBM model training completed')
         return best_model
+    
     except Exception as e:
         logger.error('Error during LightGBM model training: %s', e)
         raise
@@ -157,13 +149,13 @@ def main():
         train_data    = load_data(os.path.join(root_dir, 'data/interim/train_processed.csv'))
 
         # Apply TF-IDF feature engineering on training data
-        X_train_tfidf, y_train = apply_tfidf(train_data, max_features, ngram_range)
+        X_train_tfidf, y_train             = apply_tfidf(train_data, max_features, ngram_range)
 
         # Apply SMOTE on train data
         X_train_tfidf_smote, y_train_smote = apply_smote(X_train_tfidf, y_train)
 
         # Train the LightGBM model using hyperparameters from params.yaml
-        best_model    = train_lgbm(X_train_tfidf_smote, y_train_smote, params)
+        best_model                         = train_lgbm(X_train_tfidf_smote, y_train_smote, params)
 
         # Save the trained model in the root directory
         save_model(best_model, os.path.join(root_dir, 'lgbm_model.pkl'))

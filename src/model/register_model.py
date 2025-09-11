@@ -57,6 +57,19 @@ def register_model(model_name: str, model_info: dict):
                                              )
         
         logger.debug(f'Model {model_name} version {model_version.version} registered and transitioned to Staging.')
+        
+        # Write model_config.json
+        model_config  = {
+                           "model_name"      : model_name,
+                           "model_version"   : str(model_version.version),
+                           "vectorizer_path" : "/app/tfidf_vectorizer.pkl"
+                        }
+        
+        with open("model_config.json", "w") as f:
+            json.dump(model_config, f, indent=4)
+        
+        logger.debug(f"model_config.json created for version {model_version.version}")
+
     except Exception as e:
         logger.error('Error during model registration: %s', e)
         raise

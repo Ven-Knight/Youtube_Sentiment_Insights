@@ -34,10 +34,10 @@ logger.addHandler(file_handler)
 
 
 def load_data(file_path: str) -> pd.DataFrame:
-    """Load data from a CSV file."""
+    """Load test data from a CSV file."""
     try:
         df = pd.read_csv(file_path)
-        logger.debug('Data loaded from %s', file_path)
+        logger.debug('Test data loaded from %s', file_path)
         return df
     except Exception as e:
         logger.error('Error loading data from %s: %s', file_path, e)
@@ -104,7 +104,7 @@ def evaluate_model(model, X_test: np.ndarray, y_test: np.ndarray):
             else:
                 metric_store[clean_label] = metrics                      # stores accuracy metric
 
-        # storing remain ing metrics which were not included in CR
+        # storing remaining metrics which were not included in CR
         metric_store["macro_roc_auc"]    = macro_roc_auc
         metric_store["weighted_roc_auc"] = weighted_roc_auc
         metric_store["log_loss"]         = log_loss_value
@@ -136,9 +136,9 @@ def save_model_info(run_id: str, model_path: str, artifact_uri: str, file_path: 
     try:
         # Create a dictionary with the info you want to save
         model_info = {
-                         'run_id'       : run_id,
-                         'model_path'   : model_path,
-                         'artifact_uri' : artifact_uri
+                         'run_id'       : run_id,                         
+                         'artifact_uri' : artifact_uri,
+                         'model_path'   : model_path
                      }
         # Save the dictionary as a JSON file
         with open(file_path, 'w') as file:

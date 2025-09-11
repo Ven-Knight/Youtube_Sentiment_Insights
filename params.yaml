@@ -9,7 +9,7 @@ model_building:
   max_depth         : 9
   num_leaves        : 21
   min_child_samples : 13
-  colsample_bytree  : 0.8078682750304069
+  colsample_bytree  : 0.80786827503040691
   subsample         : 0.9466679838733982
   reg_alpha         : 0.045972978326232164
   reg_lambda        : 0.0028978486710934384

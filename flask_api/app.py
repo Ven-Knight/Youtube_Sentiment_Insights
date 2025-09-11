@@ -13,6 +13,7 @@ import unidecode
 import pkg_resources
 import pickle
 import mlflow
+import json
 import matplotlib.pyplot   as plt
 import matplotlib.dates    as mdates
 import numpy               as np
@@ -421,8 +422,19 @@ def debug():
 
 if __name__ == '__main__':
     try:
-        model, vectorizer = load_model_and_vectorizer("yt_chrome_plugin_model", "2", "/app/tfidf_vectorizer.pkl")
-        print("Model and vectorizer loaded successfully")
+        # Load model configuration from JSON file
+        with open("model_config.json", "r") as f:
+            config        = json.load(f)
+
+        model_name        = config["model_name"]
+        model_version     = config["model_version"]
+        vectorizer_path   = config["vectorizer_path"]
+
+        # Load model and vectorizer
+        model, vectorizer = load_model_and_vectorizer(model_name, model_version, vectorizer_path)
+        
+        print(f"Model '{model_name}' version {model_version} loaded successfully")
+
     except Exception as e:
         print(f"Model loading failed: {e}")
         model, vectorizer = None, None

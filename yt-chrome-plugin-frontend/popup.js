@@ -1,20 +1,20 @@
 // popup.js
 
 document.addEventListener("DOMContentLoaded", async () => {
-  const outputDiv = document.getElementById("output");
-  const API_KEY = 'AIzaSyDW7TYt45XqhHHG0XM4sfUd7cMr99y9iQw';  // Actual YouTube Data API key
+  const outputDiv  = document.getElementById("output");
+  const API_KEY    = 'AIzaSyDW7TYt45XqhHHG0XM4sfUd7cMr99y9iQw';  // Actual YouTube Data API key
   // const API_URL = 'http://my-elb-2062136355.us-east-1.elb.amazonaws.com:80';   
   // const API_URL = 'http://localhost:5000/';
-  const API_URL = 'http://15.206.92.37:8080/';
+  const API_URL    = 'http://15.206.92.37:8080/';                // prod server IP
 
   // Get the current tab's URL
   chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
-    const url = tabs[0].url;
+    const url   = tabs[0].url;
     const youtubeRegex = /^https:\/\/(?:www\.)?youtube\.com\/watch\?v=([\w-]{11})/;
     const match = url.match(youtubeRegex);
 
     if (match && match[1]) {
-      const videoId = match[1];
+      const videoId       = match[1];
       outputDiv.innerHTML = `<div class="section-title">YouTube Video ID</div><p>${videoId}</p><p>Fetching comments...</p>`;
 
       const comments = await fetchComments(videoId);
@@ -24,12 +24,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
 
       outputDiv.innerHTML += `<p>Fetched ${comments.length} comments. Performing sentiment analysis...</p>`;
-      const predictions = await getSentimentPredictions(comments);
+      const predictions    = await getSentimentPredictions(comments);
 
       if (predictions) {
         // Process the predictions to get sentiment counts and sentiment data
         const sentimentCounts = { "1": 0, "0": 0, "-1": 0 };
-        const sentimentData = []; // For trend graph
+        const sentimentData   = []; // For trend graph
         const totalSentimentScore = predictions.reduce((sum, item) => sum + parseInt(item.sentiment), 0);
         predictions.forEach((item, index) => {
           sentimentCounts[item.sentiment]++;
@@ -40,10 +40,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
 
         // Compute metrics
-        const totalComments = comments.length;
-        const uniqueCommenters = new Set(comments.map(comment => comment.authorId)).size;
-        const totalWords = comments.reduce((sum, comment) => sum + comment.text.split(/\s+/).filter(word => word.length > 0).length, 0);
-        const avgWordLength = (totalWords / totalComments).toFixed(2);
+        const totalComments     = comments.length;
+        const uniqueCommenters  = new Set(comments.map(comment => comment.authorId)).size;
+        const totalWords        = comments.reduce((sum, comment) => sum + comment.text.split(/\s+/).filter(word => word.length > 0).length, 0);
+        const avgWordLength     = (totalWords / totalComments).toFixed(2);
         const avgSentimentScore = (totalSentimentScore / totalComments).toFixed(2);
 
         // Normalize the average sentiment score to a scale of 0 to 10
@@ -124,17 +124,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   async function fetchComments(videoId) {
-    let comments = [];
+    let comments  = [];
     let pageToken = "";
     try {
       while (comments.length < 500) {
         const response = await fetch(`https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&videoId=${videoId}&maxResults=100&pageToken=${pageToken}&key=${API_KEY}`);
-        const data = await response.json();
+        const data     = await response.json();
         if (data.items) {
           data.items.forEach(item => {
             const commentText = item.snippet.topLevelComment.snippet.textOriginal;
-            const timestamp = item.snippet.topLevelComment.snippet.publishedAt;
-            const authorId = item.snippet.topLevelComment.snippet.authorChannelId?.value || 'Unknown';
+            const timestamp   = item.snippet.topLevelComment.snippet.publishedAt;
+            const authorId    = item.snippet.topLevelComment.snippet.authorChannelId?.value || 'Unknown';
             comments.push({ text: commentText, timestamp: timestamp, authorId: authorId });
           });
         }
@@ -171,19 +171,19 @@ document.addEventListener("DOMContentLoaded", async () => {
   async function fetchAndDisplayChart(sentimentCounts) {
     try {
       const response = await fetch(`${API_URL}/generate_chart`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sentiment_counts: sentimentCounts })
+        method  : "POST",
+        headers : { "Content-Type": "application/json" },
+        body    : JSON.stringify({ sentiment_counts: sentimentCounts })
       });
       if (!response.ok) {
         throw new Error('Failed to fetch chart image');
       }
-      const blob = await response.blob();
-      const imgURL = URL.createObjectURL(blob);
-      const img = document.createElement('img');
-      img.src = imgURL;
-      img.style.width = '100%';
-      img.style.marginTop = '20px';
+      const blob           = await response.blob();
+      const imgURL         = URL.createObjectURL(blob);
+      const img            = document.createElement('img');
+      img.src              = imgURL;
+      img.style.width      = '100%';
+      img.style.marginTop  = '20px';
       // Append the image to the chart-container div
       const chartContainer = document.getElementById('chart-container');
       chartContainer.appendChild(img);
@@ -203,12 +203,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (!response.ok) {
         throw new Error('Failed to fetch word cloud image');
       }
-      const blob = await response.blob();
-      const imgURL = URL.createObjectURL(blob);
-      const img = document.createElement('img');
-      img.src = imgURL;
-      img.style.width = '100%';
-      img.style.marginTop = '20px';
+      const blob               = await response.blob();
+      const imgURL             = URL.createObjectURL(blob);
+      const img                = document.createElement('img');
+      img.src                  = imgURL;
+      img.style.width          = '100%';
+      img.style.marginTop      = '20px';
       // Append the image to the wordcloud-container div
       const wordcloudContainer = document.getElementById('wordcloud-container');
       wordcloudContainer.appendChild(img);
@@ -228,12 +228,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (!response.ok) {
         throw new Error('Failed to fetch trend graph image');
       }
-      const blob = await response.blob();
-      const imgURL = URL.createObjectURL(blob);
-      const img = document.createElement('img');
-      img.src = imgURL;
-      img.style.width = '100%';
-      img.style.marginTop = '20px';
+      const blob               = await response.blob();
+      const imgURL             = URL.createObjectURL(blob);
+      const img                = document.createElement('img');
+      img.src                  = imgURL;
+      img.style.width          = '100%';
+      img.style.marginTop      = '20px';
       // Append the image to the trend-graph-container div
       const trendGraphContainer = document.getElementById('trend-graph-container');
       trendGraphContainer.appendChild(img);

@@ -75,7 +75,7 @@ def save_data(train_data: pd.DataFrame, test_data: pd.DataFrame, data_path: str)
     try:
         raw_data_path = os.path.join(data_path, 'raw')
         
-        # Create the data/raw directory if it does not exist
+        # Create the data/raw directory if it does not exist already
         os.makedirs(raw_data_path, exist_ok=True)
         
         # Save the train and test data
