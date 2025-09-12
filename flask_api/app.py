@@ -46,6 +46,7 @@ CORS(app)  # Enable CORS for all routes
 nltk.download("punkt")
 nltk.download("stopwords")
 nltk.download("wordnet")
+nltk.download('punkt_tab')
 
 # Initialize SymSpell for spelling correction
 sym_spell  = SymSpell(max_dictionary_edit_distance=2)
