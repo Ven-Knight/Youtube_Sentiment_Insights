@@ -151,7 +151,7 @@ def clean_comment(text):
         # Step 1️⃣2️⃣: Remove emojis and non-ASCII characters
         corrected_text = emoji.replace_emoji(corrected_text, replace="")
 
-        logger.info(f" ✅ Cleaned comment      : {corrected_text}")
+        logger.info(f" 🔹 Cleaned comment      : {corrected_text}")
         return corrected_text
 
     except Exception as e:
@@ -258,7 +258,7 @@ def predict():
         preprocessed_comments = []
 
         for idx, comment in enumerate(comments):
-            logger.info(f" 🔢 Processing comment #{idx+1}")    
+            logger.info(f" 🧠 Processing comment #{idx+1}")    
             # Clean and preprocess        
             cleaned           = clean_comment(comment)            
             preprocessed      = preprocess_comment(cleaned)     
@@ -574,7 +574,7 @@ def debug():
         debug_responses      = []
 
         for index, text in enumerate(comments):
-            logger.info(f" 🔢 Processing comment #{index+1}")
+            logger.info(f" 🧠 Processing comment #{index+1}")
 
             # Clean and preprocess
             cleaned          = clean_comment     (text)
@@ -584,7 +584,8 @@ def debug():
             vec              = vectorizer.transform([preprocessed])
             vectorized_shape = vec.shape
             nonzero_features = int((vec != 0).sum())
-            logger.debug(f"🔹 Vectorized shape: {vectorized_shape}, Non-zero features: {nonzero_features}")
+            logger.debug(f"🔹 Vectorized shape     : {vectorized_shape}")
+            logger.debug(f"🔹 Non-zero features    : {nonzero_features}")
 
             # Convert to DataFrame
             df               = pd.DataFrame(vec.toarray(), columns=vectorizer.get_feature_names_out())
