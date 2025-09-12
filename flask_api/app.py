@@ -236,7 +236,7 @@ def load_model_and_vectorizer(model_name, model_version, vectorizer_path):
 @app.route('/')
 def home():
     logger.info(" 📥 Root endpoint '/' accessed")
-    return "✅ Welcome to the Flask Sentiment API"
+    return "✅ Welcome to the FLASK Sentiment API"
 
 # ──────────────────────────────────────────────────────────────────────────────────────
 # Define prediction route
@@ -255,19 +255,14 @@ def predict():
 
 
     try:
-        # Preprocess each comment before vectorizing
-        # cleaned_comments      = [clean_comment     (comment) for comment in comments]
-        # preprocessed_comments = [preprocess_comment(comment) for comment in cleaned_comments]
-        cleaned_comments      = []
         preprocessed_comments = []
 
         for idx, comment in enumerate(comments):
-            logger.info(f" 🔢 Processing comment #{idx+1}")            
-            cleaned           = clean_comment(comment)
-            cleaned_comments.append(cleaned)
-            preprocessed      = preprocess_comment(cleaned)            
+            logger.info(f" 🔢 Processing comment #{idx+1}")    
+            # Clean and preprocess        
+            cleaned           = clean_comment(comment)            
+            preprocessed      = preprocess_comment(cleaned)     
             preprocessed_comments.append(preprocessed)
-
 
         # Transform comments using the vectorizer
         transformed_comments  = vectorizer.transform(preprocessed_comments)
@@ -600,7 +595,7 @@ def debug():
 
             # Construct response
             debug_responses.append({
-                                      "comment"          : text,
+                                     "comment"          : text,
                                      "cleaned"          : cleaned,
                                      "preprocessed"     : preprocessed,
                                      "vectorized_shape" : vectorized_shape,
@@ -608,7 +603,7 @@ def debug():
                                      "prediction"       : pred
                                   })
             
-            return jsonify(debug_responses)
+        return jsonify(debug_responses)
 
     except Exception as e:
         logger.error("❌ Error in /debug route")
