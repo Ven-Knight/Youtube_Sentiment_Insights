@@ -79,7 +79,7 @@ try:
     sym_spell  = SymSpell(max_dictionary_edit_distance=2)
     dict_path  = pkg_resources.resource_filename("symspellpy", "frequency_dictionary_en_82_765.txt")
     sym_spell.load_dictionary(dict_path, term_index=0, count_index=1)
-    logger.info(f"✅ SymSpell initialized with {len(sym_spell._words)} words")
+    logger.info(f" ✅ SymSpell initialized with {len(sym_spell._words)} words")
 except Exception as e:
     logger.error("❌ Failed to initialize SymSpell")
     logger.exception(e)
@@ -189,7 +189,7 @@ def preprocess_comment(cleaned_text):
             logger.warning("⚠️ Preprocessed text is empty, falling back to cleaned text")
             processed_text = cleaned_text
 
-        logger.info(f"✅ preprocessed comment : {processed_text}")
+        logger.info(f" ✅ preprocessed comment : {processed_text}")
         return processed_text
 
     except Exception as e:
@@ -248,9 +248,7 @@ def predict():
     comments = data.get('comments')
 
     logger.info(" 📥 /predict endpoint accessed")
-    logger.debug(f"🔹 Received payload : {comments}")
-
-    
+        
     if not comments:
         logger.warning("⚠️ No comments provided in request")
         return jsonify({"error": "No comments provided"}), 400
@@ -258,9 +256,19 @@ def predict():
 
     try:
         # Preprocess each comment before vectorizing
-        cleaned_comments      = [clean_comment     (comment) for comment in comments]
-        preprocessed_comments = [preprocess_comment(comment) for comment in cleaned_comments]
-        
+        # cleaned_comments      = [clean_comment     (comment) for comment in comments]
+        # preprocessed_comments = [preprocess_comment(comment) for comment in cleaned_comments]
+        cleaned_comments      = []
+        preprocessed_comments = []
+
+        for idx, comment in enumerate(comments):
+            logger.info(f" 🔢 Processing comment #{idx+1}")            
+            cleaned           = clean_comment(comment)
+            cleaned_comments.append(cleaned)
+            preprocessed      = preprocess_comment(cleaned)            
+            preprocessed_comments.append(preprocessed)
+
+
         # Transform comments using the vectorizer
         transformed_comments  = vectorizer.transform(preprocessed_comments)
 
@@ -570,8 +578,8 @@ def debug():
 
         debug_responses      = []
 
-        for text in comments:
-            logger.info(f" 🔍 Processing comment: {text}")
+        for index, text in enumerate(comments):
+            logger.info(f" 🔢 Processing comment #{index+1}")
 
             # Clean and preprocess
             cleaned          = clean_comment     (text)
