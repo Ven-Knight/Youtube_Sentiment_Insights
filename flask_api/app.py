@@ -189,7 +189,7 @@ def preprocess_comment(cleaned_text):
             logger.warning("⚠️ Preprocessed text is empty, falling back to cleaned text")
             processed_text = cleaned_text
 
-        logger.info(f" ✅ preprocessed comment : {processed_text}")
+        logger.info(f" 🔹 preprocessed comment : {processed_text}")
         return processed_text
 
     except Exception as e:
