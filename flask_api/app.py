@@ -28,230 +28,232 @@ from mlflow.tracking       import MlflowClient
 from flask_cors            import CORS
 from flask                 import Flask, request, jsonify, send_file
 
+# ────────────────────────────────────────────────────────────────────────────────────────
+# Logging configuration
+# ────────────────────────────────────────────────────────────────────────────────────────
 
-import logging
+logger          = logging.getLogger('flask_api')
+logger            .setLevel(logging.DEBUG)
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
-)
-logger = logging.getLogger(__name__)
+# Console handler for DEBUG and above
+console_handler = logging.StreamHandler()
+console_handler   .setLevel(logging.DEBUG)
 
+# File handler for ERROR and above
+file_handler    = logging.FileHandler('flask_api_errors.log')
+file_handler      .setLevel(logging.ERROR)
 
+# Formatter
+formatter       = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console_handler   .setFormatter(formatter)
+file_handler      .setFormatter(formatter)
+
+# Attach handlers
+logger.addHandler(console_handler)
+logger.addHandler(file_handler)
+
+# ────────────────────────────────────────────────────────────────────────────────────────
+# Initialize Flask app
+# ────────────────────────────────────────────────────────────────────────────────────────
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+CORS(app)            # Enable CORS for all routes
+logger.info("✅ Flask app initialized & CORS enabled for all routes")
 
-# Download required NLTK data for NLP
-nltk.download("punkt")
-nltk.download("stopwords")
-nltk.download("wordnet")
-nltk.download('punkt_tab')
 
-# Initialize SymSpell for spelling correction
-sym_spell  = SymSpell(max_dictionary_edit_distance=2)
-dict_path  = pkg_resources.resource_filename("symspellpy", "frequency_dictionary_en_82_765.txt")
-sym_spell.load_dictionary(dict_path, term_index=0, count_index=1)
+# ────────────────────────────────────────────────────────────────────────────────────────
+# Download required NLTK data
+# ────────────────────────────────────────────────────────────────────────────────────────
+try:
+    nltk.download("punkt")
+    nltk.download("stopwords")
+    nltk.download("wordnet")
+    nltk.download("punkt_tab")
+    logger.info("✅ NLTK resources downloaded successfully")
+except Exception as e:
+    logger.error("❌ Failed to download NLTK resources")
+    logger.exception(e)
+
+# Initialize SymSpell
+try:
+    sym_spell  = SymSpell(max_dictionary_edit_distance=2)
+    dict_path  = pkg_resources.resource_filename("symspellpy", "frequency_dictionary_en_82_765.txt")
+    sym_spell.load_dictionary(dict_path, term_index=0, count_index=1)
+    logger.info(f"✅ SymSpell initialized with {sym_spell.words_count} words")
+except Exception as e:
+    logger.error("❌ Failed to initialize SymSpell")
+    logger.exception(e)
 
 # Initialize NLP tools
-lemmatizer = WordNetLemmatizer()
-stemmer    = PorterStemmer()
-stop_words = set(stopwords.words('english')) - {'not', 'but', 'however', 'no', 'yet'} # retaining important ones for sentiment analysis
+try:
+    lemmatizer = WordNetLemmatizer()
+    stemmer    = PorterStemmer()
+    stop_words = set(stopwords.words('english')) - {'not', 'but', 'however', 'no', 'yet'}
+    logger.info(f"✅ NLP tools initialized. Stopwords count: {len(stop_words)}")
+except Exception as e:
+    logger.error("❌ Failed to initialize NLP tools")
+    logger.exception(e)
 
-print("NLTK resources downloaded and NLP tools initialized")
 
 
+# ────────────────────────────────────────────────────────────────────────────────────────
 # Define clean_comment function
-# def clean_comment(text):
-#     """Apply cleaning transformations to a comment."""
-#     corrected_text = ""                    # Initialize to avoid reference error
-
-#     try:
-#         """Step-by-step text cleaning for NLP tasks."""
-
-#         # Step 1️⃣: Convert Tensor to string if needed
-#         # if isinstance(text, tf.Tensor):
-#         #     text = text.numpy().decode("utf-8")
-
-#         # Step 2️⃣: Remove HTML tags
-#         text = BeautifulSoup(text, "html.parser").get_text()
-
-#         # Step 3️⃣: Expand contractions (e.g., "don't" → "do not")
-#         text = contractions.fix(text)
-    
-#         # Step 4️⃣: Replace hyphens with spaces
-#         text = re.sub(r"-", " ", text)
-
-#         # Step 5️⃣: Remove special characters (except basic punctuation)
-#         text = re.sub(r"[^a-zA-Z0-9\s.,!?]", "", text)
-
-#         # Step 6️⃣: Remove newline characters
-#         text = text.replace('\n', ' ')
-
-#         # Step 7️⃣: Remove URLs
-#         url_pattern = r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"
-#         text = re.sub(url_pattern, '', text)
-
-#         # Step 8️⃣: Convert to lowercase
-#         text = text.lower()
-
-#         # Step 9️⃣: Correct misspellings using SymSpell
-#         words          = text.split()
-#         corrected_text = " ".join([
-#                                     sym_spell.lookup(word, Verbosity.CLOSEST, max_edit_distance=2)[0].term
-#                                     if   sym_spell.lookup(word, Verbosity.CLOSEST, max_edit_distance=2)
-#                                     else word for word in words
-#                                 ])
-
-#         # Step 🔟: Remove extra whitespaces
-#         corrected_text = re.sub(r"\s+", " ", corrected_text).strip()
-
-#         # Step 1️⃣1️⃣: Normalize Unicode characters (e.g., accented letters → plain text)
-#         corrected_text = unidecode.unidecode(corrected_text)
-
-#         # Step 1️⃣2️⃣: Remove emojis and non-ASCII characters
-#         corrected_text = emoji.replace_emoji(corrected_text, replace="")
-
-#         return corrected_text
-
-#     except Exception as e:
-#         print(f"Error in cleaning comment: {e}")
-#         return corrected_text
+# ────────────────────────────────────────────────────────────────────────────────────────
 
 def clean_comment(text):
-    corrected_text = ""
-    try:
-        logger.info(f"🔹 Raw input: {text}")
+    """Apply cleaning transformations to a comment."""
+    corrected_text = ""                    # Initialize to avoid reference error
 
+    try:
+        """Step-by-step text cleaning for NLP tasks."""
+        logger.info(f"🔹 Raw comment          : {text}")
+
+        # Step 1️⃣: Convert Tensor to string if needed
+        # if isinstance(text, tf.Tensor):
+        #     text = text.numpy().decode("utf-8")
+
+        # Step 2️⃣: Remove HTML tags
         text = BeautifulSoup(text, "html.parser").get_text()
+
+        # Step 3️⃣: Expand contractions (e.g., "don't" → "do not")
         text = contractions.fix(text)
-        text = re.sub(r"[–—]", " ", text)  # handle em-dash
+    
+        # Step 4️⃣: Replace hyphens with spaces
         text = re.sub(r"-", " ", text)
+
+        # Step 5️⃣: Remove special characters (except basic punctuation)
         text = re.sub(r"[^a-zA-Z0-9\s.,!?]", "", text)
+
+        # Step 6️⃣: Remove newline characters
         text = text.replace('\n', ' ')
-        text = re.sub(r"http[s]?://\S+", '', text)
+
+        # Step 7️⃣: Remove URLs
+        url_pattern = r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"
+        text = re.sub(url_pattern, '', text)
+
+        # Step 8️⃣: Convert to lowercase
         text = text.lower()
 
-        words = text.split()
+        # Step 9️⃣: Correct misspellings using SymSpell
+        words          = text.split()
         corrected_text = " ".join([
-            sym_spell.lookup(word, Verbosity.CLOSEST, max_edit_distance=2)[0].term
-            if sym_spell.lookup(word, Verbosity.CLOSEST, max_edit_distance=2)
-            else word for word in words
-        ])
+                                    sym_spell.lookup(word, Verbosity.CLOSEST, max_edit_distance=2)[0].term
+                                    if   sym_spell.lookup(word, Verbosity.CLOSEST, max_edit_distance=2)
+                                    else word for word in words
+                                ])
 
+        # Step 🔟: Remove extra whitespaces
         corrected_text = re.sub(r"\s+", " ", corrected_text).strip()
+
+        # Step 1️⃣1️⃣: Normalize Unicode characters (e.g., accented letters → plain text)
         corrected_text = unidecode.unidecode(corrected_text)
+
+        # Step 1️⃣2️⃣: Remove emojis and non-ASCII characters
         corrected_text = emoji.replace_emoji(corrected_text, replace="")
 
-        logger.info(f"✅ Cleaned text: {corrected_text}")
+        logger.info(f"✅ Cleaned comment      : {corrected_text}")
         return corrected_text
 
     except Exception as e:
-        logger.error(f"❌ Error in clean_comment: {e}")
-        logging.exception(e)
+        logger.error("❌ Error in clean_comment")
+        logger.exception(e)
         return corrected_text
-    
 
-# Define the pre_processing function
-# def preprocess_comment(cleaned_text):
-#     """Apply pre_processing transformations to a comment."""
-#     processed_text = ""                       # Initialize to avoid reference error
-
-#     try:
-#         """Step-by-step NLP preprocessing: tokenization, stopword removal, lemmatization."""
-
-#         # Step 1️⃣: Tokenize the cleaned text
-#         tokens = word_tokenize(cleaned_text)
-
-#         # Step 2️⃣: Remove stopwords
-#         tokens = [word for word in tokens if word not in stop_words]
-
-#         # Step 3️⃣: Lemmatize tokens
-#         lemmatized_tokens = [lemmatizer.lemmatize(word) for word in tokens]
-
-#         # Step 4️⃣: (Optional) Stemming — currently commented out
-#         # stemmed_tokens = [stemmer.stem(word) for word in lemmatized_tokens]
-
-#         # Step 5️⃣: Reconstruct the processed sentence
-#         processed_text = " ".join(lemmatized_tokens)
-
-#         return processed_text
-
-#     except Exception as e:
-#         print(f"Error in preprocessing comment: {e}")
-#         return processed_text
+# ──────────────────────────────────────────────────────────────────────────────────────
+# Define preprocess_comment function
+# ──────────────────────────────────────────────────────────────────────────────────────
 
 def preprocess_comment(cleaned_text):
-    processed_text = ""
+    """Apply NLP preprocessing: tokenization, stopword removal, lemmatization."""
+    processed_text = ""                       # Initialize to avoid reference error
+
     try:
-        logger.info(f"🔹 Preprocessing input: {cleaned_text}")
-
+        
+        # Step 1️⃣: Tokenize the cleaned text
         tokens = word_tokenize(cleaned_text)
-        logger.info(f"🔹 Tokens: {tokens}")
 
+        # Step 2️⃣: Remove stopwords
         tokens = [word for word in tokens if word not in stop_words]
-        logger.info(f"🔹 After stopword removal: {tokens}")
 
+        # Step 3️⃣: Lemmatize tokens
         lemmatized_tokens = [lemmatizer.lemmatize(word) for word in tokens]
-        logger.info(f"🔹 Lemmatized tokens: {lemmatized_tokens}")
 
+        # Step 4️⃣: (Optional) Stemming — currently commented out
+        # stemmed_tokens = [stemmer.stem(word) for word in lemmatized_tokens]
+
+        # Step 5️⃣: Reconstruct the processed sentence
         processed_text = " ".join(lemmatized_tokens)
 
+        # Step 6️⃣: Fallback if empty
         if not processed_text.strip():
             logger.warning("⚠️ Preprocessed text is empty, falling back to cleaned text")
             processed_text = cleaned_text
 
-        logger.info(f"✅ Final preprocessed text: {processed_text}")
+        logger.info(f"✅ preprocessed comment : {processed_text}")
         return processed_text
 
     except Exception as e:
-        logger.error(f"❌ Error in preprocess_comment: {e}")
-        logging.exception(e)
-        return cleaned_text
+        logger.error("❌ Error in preprocess_comment")
+        logger.exception(e)
+        return cleaned_text  # fallback to cleaned version
 
 
+# ──────────────────────────────────────────────────────────────────────────────────────
 # Load the model and vectorizer from the model registry and local storage
+# ──────────────────────────────────────────────────────────────────────────────────────
 def load_model_and_vectorizer(model_name, model_version, vectorizer_path):
     try:
-        print(f"Loading model: {model_name} version: {model_version}")
+        # Set MLflow tracking URI
         mlflow.set_tracking_uri("http://ec2-13-233-244-190.ap-south-1.compute.amazonaws.com:5000/")   # MLflow tracking URI
         client = MlflowClient()
 
+        # Load model from MLflow registry
         model = mlflow.pyfunc.load_model(f"models:/{model_name}/{model_version}")
-        print("Model loaded successfully")
-        print(f"Model type: {type(model)}")
+        logger.debug(f"📦 Model type: {type(model)}")
 
         # Validate vectorizer file path
         if not os.path.exists(vectorizer_path):
             raise FileNotFoundError(f"Vectorizer file not found at: {vectorizer_path}")
 
-        print(f"Loading vectorizer from: {vectorizer_path}")
+        logger.info(f"🔄 Loading vectorizer from: {vectorizer_path}")
         with open(vectorizer_path, "rb") as f:
             vectorizer = pickle.load(f)
-        print("Vectorizer loaded successfully")
+        logger.info("✅ Vectorizer loaded successfully")
 
         return model, vectorizer
 
     except Exception as e:
-        print(f"Error loading model or vectorizer: {e}")
+        logger.error("❌ Error loading model or vectorizer")
+        logger.exception(e)
         return None, None
 
 
-
+# ──────────────────────────────────────────────────────────────────────────────────────
+# Define root route
+# ──────────────────────────────────────────────────────────────────────────────────────
 
 @app.route('/')
 def home():
-    return "Welcome to our flask api"
+    logger.info("📥 Root endpoint '/' accessed")
+    return "✅ Welcome to the Flask Sentiment API"
+
+# ──────────────────────────────────────────────────────────────────────────────────────
+# Define prediction route
+# ──────────────────────────────────────────────────────────────────────────────────────
 
 @app.route('/predict', methods=['POST'])
 def predict():
     data     = request.json
     comments = data.get('comments')
-    # print("i am the comment: ",comments)
-    # print("i am the comment type: ",type(comments))
+
+    logger.info("📥 /predict endpoint accessed")
+    logger.debug(f"🔹 Received payload : {comments}")
+
     
     if not comments:
+        logger.warning("⚠️ No comments provided in request")
         return jsonify({"error": "No comments provided"}), 400
+
 
     try:
         # Preprocess each comment before vectorizing
@@ -268,22 +270,39 @@ def predict():
         
         # Make predictions
         predictions           = model.predict(dense_df).tolist()       # Convert to list
-        
+        logger.info("✅ Predictions successfully generated by model")
+
         # Convert predictions to strings for consistency
         # predictions = [str(pred) for pred in predictions]
+
     except Exception as e:
+        logger.error("❌ Prediction pipeline failed")
+        logger.exception(e)
         return jsonify({"error": f"Prediction failed: {str(e)}"}), 500
+
     
     # Return the response with original comments and predicted sentiments
-    response = [{"comment": comment, "sentiment": sentiment} for comment, sentiment in zip(comments, predictions)]
+    response = [
+                    {"comment": comment, "sentiment": sentiment} 
+                    for comment, sentiment in zip(comments, predictions)
+               ]
     return jsonify(response)
+
+
+# ──────────────────────────────────────────────────────────────────────────────────────
+# Define timestamped prediction route
+# ──────────────────────────────────────────────────────────────────────────────────────
 
 @app.route('/predict_with_timestamps', methods=['POST'])
 def predict_with_timestamps():
     data          = request.json
     comments_data = data.get('comments')
     
+    logger.info("📥 /predict_with_timestamps endpoint accessed")
+    logger.debug(f"🔹 Received payload: {comments_data}")
+
     if not comments_data:
+        logger.warning("⚠️ No comments provided in request")
         return jsonify({"error": "No comments provided"}), 400
 
     try:
@@ -309,20 +328,38 @@ def predict_with_timestamps():
         # Convert predictions to strings for consistency
         predictions           = [str(pred) for pred in predictions]
 
-    except Exception as e:
-        return jsonify({"error": f"Prediction failed: {str(e)}"}), 500
+        logger.info("✅ Predictions successfully generated by model")
     
-    # Return the response with original comments, predicted sentiments, and timestamps
-    response = [{"comment": comment, "sentiment": sentiment, "timestamp": timestamp} for comment, sentiment, timestamp in zip(comments, predictions, timestamps)]
+    except Exception as e:
+        logger.error("❌ Prediction pipeline failed")
+        logger.exception(e)
+        return jsonify({"error": f"Prediction failed: {str(e)}"}), 500
+
+    
+    # construct and return the response with original comments, predicted sentiments, and timestamps
+    response = [
+                    {"comment": comment, "sentiment": sentiment, "timestamp": timestamp} 
+                    for comment, sentiment, timestamp in zip(comments, predictions, timestamps)
+               ]
     return jsonify(response)
+
+
+
+# ──────────────────────────────────────────────────────────────────────────────────────
+# Define chart generation route
+# ──────────────────────────────────────────────────────────────────────────────────────
+
 
 @app.route('/generate_chart', methods=['POST'])
 def generate_chart():
     try:
+        logger.info("📥 /generate_chart endpoint accessed")
+
         data             = request.get_json()
         sentiment_counts = data.get('sentiment_counts')
         
         if not sentiment_counts:
+            logger.warning("⚠️ No sentiment counts provided in request")
             return jsonify({"error": "No sentiment counts provided"}), 400
 
         # Prepare data for the pie chart
@@ -354,20 +391,31 @@ def generate_chart():
         plt.savefig(img_io, format='PNG', transparent=True)
         img_io.seek(0)
         plt.close()
+        logger.info("✅ Chart generated successfully")
 
         # Return the image as a response
         return send_file(img_io, mimetype='image/png')
     except Exception as e:
-        app.logger.error(f"Error in /generate_chart: {e}")
+        logger.error("❌ Error in /generate_chart")
+        logger.exception(e)
         return jsonify({"error": f"Chart generation failed: {str(e)}"}), 500
+
+
+
+# ──────────────────────────────────────────────────────────────────────────────────────
+# Define word cloud generation route
+# ──────────────────────────────────────────────────────────────────────────────────────
 
 @app.route('/generate_wordcloud', methods=['POST'])
 def generate_wordcloud():
     try:
+        logger.info("📥 /generate_wordcloud endpoint accessed")
+
         data     = request.get_json()
         comments = data.get('comments')
 
         if not comments:
+            logger.warning("⚠️ No comments provided in request")
             return jsonify({"error": "No comments provided"}), 400
 
         # Preprocess comments
@@ -386,6 +434,8 @@ def generate_wordcloud():
                                             stopwords        = set(stopwords.words('english')),
                                             collocations     = False
                                          ).generate(text)
+        
+        logger.info("✅ Word cloud generated successfully")
 
         # Save the word cloud to a BytesIO object
         img_io                = io.BytesIO()
@@ -394,17 +444,25 @@ def generate_wordcloud():
 
         # Return the image as a response
         return send_file(img_io, mimetype='image/png')
+    
     except Exception as e:
-        app.logger.error(f"Error in /generate_wordcloud: {e}")
+        logger.error("❌ Error in /generate_wordcloud")
+        logger.exception(e)
         return jsonify({"error": f"Word cloud generation failed: {str(e)}"}), 500
 
+# ──────────────────────────────────────────────────────────────────────────────────────
+# Define sentiment trend graph generation route
+# ──────────────────────────────────────────────────────────────────────────────────────
 @app.route('/generate_trend_graph', methods=['POST'])
 def generate_trend_graph():
     try:
+        logger.info("📥 /generate_trend_graph endpoint accessed")
+
         data             = request.get_json()
         sentiment_data   = data.get('sentiment_data')
 
         if not sentiment_data:
+            logger.warning("⚠️ No sentiment data provided in request")
             return jsonify({"error": "No sentiment data provided"}), 400
 
         # Convert sentiment_data to DataFrame
@@ -474,37 +532,78 @@ def generate_trend_graph():
         plt.savefig(img_io, format='PNG')
         img_io.seek(0)
         plt.close()
+        logger.info("✅ Trend graph generated successfully")
 
         # Return the image as a response
         return send_file(img_io, mimetype='image/png')
-    except Exception as e:
-        app.logger.error(f"Error in /generate_trend_graph: {e}")
-        return jsonify({"error": f"Trend graph generation failed: {str(e)}"}), 500
     
+    except Exception as e:
+        logger.error("❌ Error in /generate_trend_graph")
+        logger.exception(e)
+        return jsonify({"error": f"Trend graph generation failed: {str(e)}"}), 500
+
+# ──────────────────────────────────────────────────────────────────────────────────────
+# Define health_check route
+# ──────────────────────────────────────────────────────────────────────────────────────
 @app.route('/health')
 def health():
-    return jsonify({"status": "ok"})
+    logger.info("📥 /health endpoint accessed")
+    return jsonify({"status": "ok", "message": "API is healthy and running"})
+
+
+# ──────────────────────────────────────────────────────────────────────────────────────
+# Define debug route for introspection
+# ──────────────────────────────────────────────────────────────────────────────────────
 
 @app.route('/debug', methods=['POST'])
 def debug():
-    data         = request.json
-    text         = data.get('text', '')
-    cleaned      = clean_comment(text)
-    preprocessed = preprocess_comment(cleaned)
-    vec          = vectorizer.transform([preprocessed])
-    df           = pd.DataFrame(vec.toarray(), columns=vectorizer.get_feature_names_out())
-    pred         = model.predict(df).tolist()
-    return jsonify({
-                      "comment"          : text,
-                      "cleaned"          : cleaned,
-                      "preprocessed"     : preprocessed,
-                      "vectorized_shape" : vec.shape,
-                      "nonzero_features" : int((vec != 0).sum()),   # tells how many features are actually active
-                      "prediction"       : pred
-                   })
+    try:
+        logger.info("📥 /debug endpoint accessed")
+
+        data             = request.json
+        text             = data.get('text', '')
+        # Clean and preprocess
+        cleaned          = clean_comment     (text)    
+        preprocessed     = preprocess_comment(cleaned)  
+        # Vectorize
+        vec              = vectorizer.transform([preprocessed])
+        vectorized_shape = vec.shape
+        nonzero_features = int((vec != 0).sum())
+        logger.debug(f"🔹 Vectorized shape: {vectorized_shape}, Non-zero features: {nonzero_features}")
+
+        # Convert to DataFrame
+        df               = pd.DataFrame(vec.toarray(), columns=vectorizer.get_feature_names_out())
+
+        # Predict
+        pred             = model.predict(df).tolist()
+        logger.info("✅ Prediction generated successfully")
+
+        # Construct response
+        response = {
+                       "comment"          : text,
+                       "cleaned"          : cleaned,
+                       "preprocessed"     : preprocessed,
+                       "vectorized_shape" : vectorized_shape,
+                       "nonzero_features" : nonzero_features,
+                       "prediction"       : pred
+                   }
+        
+        return jsonify(response)
+
+    except Exception as e:
+        logger.error("❌ Error in /debug route")
+        logger.exception(e)
+        return jsonify({"error": f"Debug failed: {str(e)}"}), 500
+
+
+# ──────────────────────────────────────────────────────────────────────────────────────
+# Entry point: Load model and start Flask app
+# ──────────────────────────────────────────────────────────────────────────────────────
 
 if __name__ == '__main__':
     try:
+        logger.info("🚀 Starting model and vectorizer initialization")
+
         # Load model configuration from JSON file
         with open("model_config.json", "r") as f:
             config        = json.load(f)
@@ -512,16 +611,23 @@ if __name__ == '__main__':
         model_name        = config["model_name"]
         model_version     = config["model_version"]
         vectorizer_path   = config["vectorizer_path"]
+        logger.debug(f"🔹 Loaded model_config.json : {config}")
 
         # Load model and vectorizer
         model, vectorizer = load_model_and_vectorizer(model_name, model_version, vectorizer_path)
         
-        print(f"Model '{model_name}' version {model_version} loaded successfully")
+        if model and vectorizer:
+            logger.info(f"✅ Model '{model_name}' version {model_version} loaded successfully")
+        else:
+            logger.warning("⚠️ Model or vectorizer is None after loading")
+
 
     except Exception as e:
-        print(f"Model loading failed: {e}")
+        logger.error("❌ Model loading failed")
+        logger.exception(e)
         model, vectorizer = None, None
 
-    print("Starting Flask app on port 8080...")
+
+    logger.info("🌐 Starting Flask app on port 8080")
     app.run(host='0.0.0.0', port=8080)
 
