@@ -14,6 +14,7 @@ import pkg_resources
 import pickle
 import mlflow
 import json
+import requests
 import matplotlib.pyplot   as plt
 import matplotlib.dates    as mdates
 import numpy               as np
@@ -27,6 +28,14 @@ from nltk.stem             import WordNetLemmatizer, PorterStemmer
 from mlflow.tracking       import MlflowClient
 from flask_cors            import CORS
 from flask                 import Flask, request, jsonify, send_file
+from dotenv                import load_dotenv
+
+# ────────────────────────────────────────────────────────────────────────────────────────
+# Loading API key securely from environment
+# ────────────────────────────────────────────────────────────────────────────────────────
+
+load_dotenv()                                  # Load environment variables from .env file
+YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY") # Fetching youtube API key
 
 # ────────────────────────────────────────────────────────────────────────────────────────
 # Logging configuration
@@ -546,6 +555,8 @@ def generate_trend_graph():
         logger.exception(e)
         return jsonify({"error": f"Trend graph generation failed: {str(e)}"}), 500
 
+
+
 # ──────────────────────────────────────────────────────────────────────────────────────
 # Define health_check route
 # ──────────────────────────────────────────────────────────────────────────────────────
@@ -610,6 +621,40 @@ def debug():
         logger.error("❌ Error in /debug route")
         logger.exception(e)
         return jsonify({"error": f"Debug failed: {str(e)}"}), 500
+
+
+# ──────────────────────────────────────────────────────────────────────────────────────
+# Define Endpoint to fetch YouTube comments
+# ──────────────────────────────────────────────────────────────────────────────────────
+
+@app.route("/get_comments", methods=["POST"])
+def get_comments():
+    logger.info("📥 /get_comments endpoint accessed")
+
+    data     = request.get_json()
+    video_id = data.get("videoId")
+
+    if not video_id:
+        logger.warning("⚠️ Missing videoId in request")
+        return jsonify({"error": "Missing videoId"}), 400
+
+    url      = "https://www.googleapis.com/youtube/v3/commentThreads"
+    params   = {
+                 "part"       : "snippet",
+                 "videoId"    : video_id,
+                 "maxResults" : 100,
+                 "key"        : YOUTUBE_API_KEY
+               }
+
+    try:
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        logger.info(f" ✅ Successfully fetched comments for videoId: {video_id}")
+        return jsonify(response.json())
+    except requests.exceptions.RequestException as e:
+        logger.error(f"❌ Error fetching comments: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
 
 
 # ──────────────────────────────────────────────────────────────────────────────────────

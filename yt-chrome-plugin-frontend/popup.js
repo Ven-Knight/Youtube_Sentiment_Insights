@@ -2,7 +2,7 @@
 
 document.addEventListener("DOMContentLoaded", async () => {
   const outputDiv  = document.getElementById("output");
-  const API_KEY    = 'AIzaSyDW7TYt45XqhHHG0XM4sfUd7cMr99y9iQw';  // Actual YouTube Data API key
+  // const API_KEY    = '';  // Actual YouTube Data API key
   // const API_URL = 'http://my-elb-2062136355.us-east-1.elb.amazonaws.com:80';   
   // const API_URL = 'http://localhost:5000/';
   const API_URL    = 'http://15.206.92.37:8080/';                // prod server IP
@@ -128,7 +128,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     let pageToken = "";
     try {
       while (comments.length < 500) {
-        const response = await fetch(`https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&videoId=${videoId}&maxResults=100&pageToken=${pageToken}&key=${API_KEY}`);
+        // const response = await fetch(`https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&videoId=${videoId}&maxResults=100&pageToken=${pageToken}&key=${API_KEY}`);
+        const response = await fetch(`${API_URL}get_comments`, {
+
+                                                                  method  : "POST",
+                                                                  headers : { "Content-Type": "application/json" },
+                                                                  body    : JSON.stringify({ videoId })
+                                                               });    // To use API key in secured way
+
         const data     = await response.json();
         if (data.items) {
           data.items.forEach(item => {
