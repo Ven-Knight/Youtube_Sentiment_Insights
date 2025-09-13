@@ -201,10 +201,17 @@ def main():
                                         signature     = signature
                                     ) 
            
-            # Save model info
+            # Save model info as experiment_info.jason which will be tracked by Git to make it visible for Docker build
             artifact_uri  = mlflow.get_artifact_uri()
             model_path    = "lgbm_model"
             save_model_info(run.info.run_id, model_path, artifact_uri, 'experiment_info.json')
+
+            # This flag will helps to make dependency between model evalution and registration
+            os.makedirs("flags", exist_ok=True)
+            
+            with open("flags/evaluation_complete.flag", "w") as f:
+                f.write("completed")
+
 
             # Log the vectorizer as an artifact
             mlflow.log_artifact(os.path.join(root_dir, 'tfidf_vectorizer.pkl'))

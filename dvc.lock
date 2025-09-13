@@ -79,24 +79,28 @@ stages:
       size: 6956473
     - path: src/model/model_evaluation.py
       hash: md5
-      md5: 9e75c0f59298fa8549f78b4e6277dac5
-      size: 9345
+      md5: 76dd003a46f0c059d432b5767e463c4e
+      size: 9704
     - path: tfidf_vectorizer.pkl
       hash: md5
-      md5: 103bc5a96adc861c5d4511564c526659
+      md5: 6a71aaedf9caaed2b484c4e68912a4d6
       size: 385179
     outs:
-    - path: experiment_info.json
+    - path: flags/evaluation_complete.flag
       hash: md5
-      md5: f61bcc146943bf327b07dcb4949f2971
-      size: 191
+      md5: aa8fb77e57d1ca18d593e909729871fe
+      size: 9
   model_registration:
     cmd: python src/model/register_model.py
     deps:
     - path: experiment_info.json
       hash: md5
-      md5: f61bcc146943bf327b07dcb4949f2971
+      md5: 49b75527b2778bad2a4efaeac8bfef4d
       size: 191
+    - path: flags/evaluation_complete.flag
+      hash: md5
+      md5: aa8fb77e57d1ca18d593e909729871fe
+      size: 9
     - path: src/model/register_model.py
       hash: md5
       md5: d0d88b71ba474d525cf865687b602933

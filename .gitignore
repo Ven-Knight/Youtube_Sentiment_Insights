@@ -209,4 +209,4 @@ __marimo__/
 # /tfidf_vectorizer.pkl
 # /model_config.json
 .env
-/experiment_info.json
+# /experiment_info.json

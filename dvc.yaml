@@ -40,10 +40,11 @@ stages:
     - data/interim/test_processed.csv
     - src/model/model_evaluation.py
     outs:
-    - experiment_info.json
+    - flags/evaluation_complete.flag
 
   model_registration:
     cmd: python src/model/register_model.py
-    deps:
-    - experiment_info.json
+    deps:    
+    - flags/evaluation_complete.flag  # DVC-tracked for DAG
+    - experiment_info.json            # Git-tracked for metadata to dockrization
     - src/model/register_model.py
