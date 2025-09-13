@@ -28,15 +28,13 @@ from nltk.stem             import WordNetLemmatizer, PorterStemmer
 from mlflow.tracking       import MlflowClient
 from flask_cors            import CORS
 from flask                 import Flask, request, jsonify, send_file
-from dotenv                import load_dotenv
 
 # ────────────────────────────────────────────────────────────────────────────────────────
-# Load centralized runtime configuration for API keys, service URIs, and Flask port
+# Load centralized runtime configuration for API keys, service URIs
 # ────────────────────────────────────────────────────────────────────────────────────────
 from env_config import (
                             YOUTUBE_API_KEY,
-                            MLFLOW_TRACKING_URI,
-                            API_PORT
+                            MLFLOW_TRACKING_URI
                        )
 
 # ────────────────────────────────────────────────────────────────────────────────────────
@@ -692,5 +690,5 @@ if __name__ == '__main__':
 
 
     logger.info(" 🌐 Starting Flask app on port 8080")
-    app.run(host='0.0.0.0', port=API_PORT)
+    app.run(host='0.0.0.0', port=8080)
 

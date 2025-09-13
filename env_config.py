@@ -1,16 +1,29 @@
 import os
 from dotenv import load_dotenv
 
-# Load environment variables from .env inside flask_api/
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "flask_api", ".env"))
+# ─────────────────────────────────────────────────────────────────────────────
+# Load environment variables from .env file for local development
+# ─────────────────────────────────────────────────────────────────────────────
+# This ensures that when running locally (outside Docker), config values like
+# MLFLOW_TRACKING_URI and YOUTUBE_API_KEY are available via os.environ.
+
+# In production or CI/CD, these variables are injected at runtime and this
+# loading step is safely ignored.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Resolve path to .env file inside flask_api folder
+dotenv_path = os.path.join(os.path.dirname(__file__), "flask_api", ".env")
+load_dotenv(dotenv_path=dotenv_path)
 
 # ─────────────────────────────────────────────────────────────────────────────
-# External Service URIs with defaults
+# Centralized runtime configuration
 # ─────────────────────────────────────────────────────────────────────────────
-MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")
-API_PORT            = int(os.getenv("FLASK_PORT", 8080))  # Port Flask will run on
+
+MLFLOW_TRACKING_URI = os.environ.get("MLFLOW_TRACKING_URI")
+YOUTUBE_API_KEY     = os.environ.get("YOUTUBE_API_KEY")
 
 # ─────────────────────────────────────────────────────────────────────────────
-# API Keys
+# - Local runs   : .env is loaded explicitly
+# - Docker/CI/CD : .env is ignored, and values come from -e injection
+# - No code changes needed between environments
 # ─────────────────────────────────────────────────────────────────────────────
-YOUTUBE_API_KEY     = os.getenv("YOUTUBE_API_KEY")

@@ -7,9 +7,6 @@ WORKDIR /app
 # Copy all files from your repo into the container /app directory
 COPY . /app                            
 
-# Copy environment variables file into the container for secure runtime configuration
-COPY flask_api/.env /app/flask_api/.env
-
 # Install system-level dependencies required by LightGBM
 RUN apt-get update && apt-get install -y libgomp1
 
