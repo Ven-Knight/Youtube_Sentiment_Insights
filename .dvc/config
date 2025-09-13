@@ -1,0 +1,4 @@
+[core]
+    remote = my_dvc_remote
+['remote "my_dvc_remote"']
+    url = s3://mlflow-s3-25/path/to/dvc-storage
