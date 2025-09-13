@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // const API_KEY    = '';  // Actual YouTube Data API key
   // const API_URL = 'http://my-elb-2062136355.us-east-1.elb.amazonaws.com:80';   
   // const API_URL = 'http://localhost:5000/';
-  const API_URL    = 'http://15.206.92.37:8080/';                // prod server IP
+  const API_URL    = 'http://13.232.234.233:8080/';                // prod server IP
 
   // Get the current tab's URL
   chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {

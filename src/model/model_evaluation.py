@@ -13,6 +13,8 @@ from sklearn.metrics                 import *
 from sklearn.feature_extraction.text import TfidfVectorizer
 from mlflow.models                   import infer_signature
 
+from env_config                      import MLFLOW_TRACKING_URI
+
 
 
 # logging configuration
@@ -150,12 +152,12 @@ def save_model_info(run_id: str, model_path: str, artifact_uri: str, file_path: 
 
 
 def main():
-    mlflow.set_tracking_uri("http://ec2-13-233-244-190.ap-south-1.compute.amazonaws.com:5000/")        # Set up the MLflow tracking server
+    mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)    # fetch the MLflow tracking server URI from centralized config
 
     # mlflow.create_experiment(
     #                             name              = "dvc-pipeline-runs",
     #                             artifact_location = "s3://mlflow-s3-25/dvc-pipeline-runs"
-    #                         )                                                                          # create an experiment 
+    #                         )                                                                         # create an experiment 
 
     mlflow.set_experiment("dvc-pipeline-runs")                                                         # set an experiment
     

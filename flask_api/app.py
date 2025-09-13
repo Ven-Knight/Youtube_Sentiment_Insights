@@ -31,11 +31,13 @@ from flask                 import Flask, request, jsonify, send_file
 from dotenv                import load_dotenv
 
 # ────────────────────────────────────────────────────────────────────────────────────────
-# Loading API key securely from environment
+# Load centralized runtime configuration for API keys, service URIs, and Flask port
 # ────────────────────────────────────────────────────────────────────────────────────────
-
-load_dotenv()                                  # Load environment variables from .env file
-YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY") # Fetching youtube API key
+from env_config import (
+                            YOUTUBE_API_KEY,
+                            MLFLOW_TRACKING_URI,
+                            API_PORT
+                       )
 
 # ────────────────────────────────────────────────────────────────────────────────────────
 # Logging configuration
@@ -212,8 +214,8 @@ def preprocess_comment(cleaned_text):
 # ──────────────────────────────────────────────────────────────────────────────────────
 def load_model_and_vectorizer(model_name, model_version, vectorizer_path):
     try:
-        # Set MLflow tracking URI
-        mlflow.set_tracking_uri("http://ec2-13-233-244-190.ap-south-1.compute.amazonaws.com:5000/")   # MLflow tracking URI
+        # Set MLflow tracking URI from centralized config
+        mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)       # MLflow tracking URI
         client = MlflowClient()
 
         # Load model from MLflow registry
@@ -690,5 +692,5 @@ if __name__ == '__main__':
 
 
     logger.info(" 🌐 Starting Flask app on port 8080")
-    app.run(host='0.0.0.0', port=8080)
+    app.run(host='0.0.0.0', port=API_PORT)
 
