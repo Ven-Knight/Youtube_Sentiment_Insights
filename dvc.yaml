@@ -47,5 +47,3 @@ stages:
     deps:
     - experiment_info.json
     - src/model/register_model.py
-    outs:
-    - model_config.json

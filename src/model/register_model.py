@@ -4,6 +4,10 @@ import json
 import mlflow
 import logging
 import os
+import sys
+
+# Add project root to Python path to make env_config.py visible
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 from env_config import MLFLOW_TRACKING_URI
 
 # Set up MLflow tracking URI

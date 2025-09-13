@@ -3,6 +3,7 @@ import pandas            as pd
 import matplotlib.pyplot as plt
 import seaborn           as sns
 import os
+import sys
 import json
 import pickle
 import logging
@@ -12,6 +13,10 @@ import mlflow.sklearn
 from sklearn.metrics                 import *
 from sklearn.feature_extraction.text import TfidfVectorizer
 from mlflow.models                   import infer_signature
+
+
+# Add project root to Python path to make env_config.py visible
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
 from env_config                      import MLFLOW_TRACKING_URI
 
