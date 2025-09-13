@@ -23,4 +23,6 @@ emoji
 unidecode
 beautifulsoup4
 symspellpy
+requests
+python-dotenv
 -e .
